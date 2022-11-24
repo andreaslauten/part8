@@ -147,7 +147,7 @@ const typeDefs = gql`
 `
 
 const filterByAuthor = (books, author) => {
-  return author ? books.filter(book => book.author === author) : books
+  return author ? books.filter(book => book.author.name === author) : books
 }
 
 const filterByGenre = (books, genre) => {
@@ -160,14 +160,19 @@ const resolvers = {
   Query: {
     bookCount: async () => Book.collection.countDocuments(),
     authorCount: async () => Book.collection.countDocuments(),
-    // allBooks: (root, args) => filterByAuthor(filterByGenre(books, args.genre), args.author),
-    allBooks: async (root, args) => Book.find({}),
+    allBooks: async (root, args) => {
+      const filteredByGenre = await Book.find( { genres: { $in: [ args.genre ] } } ).populate('author')
+      const filteredByAuthor = filterByAuthor(filteredByGenre, args.author)
+      return filteredByAuthor
+    },
     allAuthors: async () => Author.find({})
   },
   Author: {
     bookCount: async (root) => {
-      const books = await Book.find({})
-      return books.filter(book => book.author === root.name).length
+      const books = await Book.find({}).populate('author')
+      console.log(root.name)
+      console.log(books)
+      return books.filter(book => book.author.name === root.name).length
     } 
   },
   Mutation: {
@@ -177,7 +182,7 @@ const resolvers = {
         const newAuthor = new Author({
           name: args.author
         })
-        newAuthor.save()
+        await newAuthor.save()
       }
       const author2 = await Author.findOne({ name: args.author })
       const book = new Book({ ...args, author: author2 })
