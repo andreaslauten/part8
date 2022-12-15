@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { useMutation } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import { ALL_BOOKS, ALL_AUTHORS, CREATE_BOOK } from './queries'
 
 
 const NewBook = (props) => {
-  const [title, setTitle] = useState('')
-  const [author, setAuthor] = useState('')
-  const [published, setPublished] = useState('')
+  const [title, setTitle] = useState('Subscriptions on client')
+  const [author, setAuthor] = useState('Me  ')
+  const [published, setPublished] = useState('2022')
   const [genre, setGenre] = useState('')
   const [genres, setGenres] = useState([])
+
+  const resultBooks = useQuery(ALL_BOOKS)
 
   const [ createBook ] = useMutation(CREATE_BOOK, {
     refetchQueries: [ { query: ALL_BOOKS }, { query: ALL_AUTHORS } ]
@@ -18,17 +20,32 @@ const NewBook = (props) => {
     return null
   }
 
+  if (resultBooks.loading) {
+    return <div>loading...</div>
+  }
+
+  const books = resultBooks.data.allBooks
+
   const submit = async (event) => {
     event.preventDefault()
 
-    const publishedInt = parseInt(published)
-    createBook({  variables: { title, author, published: publishedInt, genres } })
+    if (title && published && author) {
+      if (books.find(book => book.title === title)) {
+        window.alert("Book already exists!")
+      } else {
+        const publishedInt = parseInt(published) 
+        createBook({  variables: { title, author, published: publishedInt, genres } })
+    
+        setTitle('')
+        setPublished('')
+        setAuthor('')
+        setGenres([])
+        setGenre('')
+      }
+    } else {
+      window.alert("Please fill out all relevant fields!")
+    }
 
-    setTitle('')
-    setPublished('')
-    setAuthor('')
-    setGenres([])
-    setGenre('')
   }
 
   const addGenre = () => {

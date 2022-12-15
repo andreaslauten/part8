@@ -10,14 +10,14 @@ const Recommend = (props) => {
   const [fetchBooksFiltered, resultBooksFiltered] = useLazyQuery(BOOKS_FILTERED)
 
   useEffect(() => {
-    if (resultMe.data) {
+    if (!resultMe.loading) {
       fetchBooksFiltered({
         variables: { genre: resultMe.data.me.favouriteGenre },
         skip: resultMe.loading,
         fetchPolicy: 'no-cache'
       })
     }
-  }, [])
+  }, [fetchBooksFiltered, resultMe.data, resultMe.loading])
 
   if (resultBooks.loading || resultBooksFiltered.loading) {
     return <div>loading...</div>
